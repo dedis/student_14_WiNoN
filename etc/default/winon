@@ -1,0 +1,12 @@
+WHOME=/home/winon
+WPATH=$WHOME/.winon
+USER_PATH=$WHOME/.winon/default/user
+NET_PATH=$WHOME/.winon/default/comm
+COMM_CHECK=$WHOME/.winon/check.sh
+SANITIZATION_PATH=$WHOME/.winon/default/sanitization
+SANITIZATION_INPUT=$WHOME/.winon/input
+SANITIZATION_OUTPUT=$WHOME/.winon/output
+PIDS=$WHOME/.winon/pids
+
+# DeterLab hack
+# DETERLAB=TRUE
