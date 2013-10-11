@@ -39,14 +39,14 @@ function create_network
 {
   # Build User to Comm
   tunctl -t user-net-$nym_id -u winon
-  tunctl -t comm-user-net-$nym_id -u winon
+  tunctl -t cuser-net-$nym_id -u winon
 
   brctl addbr user-br-$nym_id
   brctl addif user-br-$nym_id user-net-$nym_id
-  brctl addif user-br-$nym_id comm-user-net-$nym_id
+  brctl addif user-br-$nym_id cuser-net-$nym_id
 
   ifconfig user-net-$nym_id 0.0.0.0
-  ifconfig comm-user-net-$nym_id 0.0.0.0
+  ifconfig cuser-net-$nym_id 0.0.0.0
   ifconfig user-br-$nym_id 0.0.0.0
 
   tunctl -t comm-net-$nym_id -u winon
@@ -68,32 +68,32 @@ function create_network
 
   # Block all packets that are not destined for the communication tool
   ebtables -A PREROUTING -s $user_net_addr -d $comm_user_net_addr -i user-net-$nym_id -j ACCEPT 
-  ebtables -A PREROUTING -s $comm_user_net_addr -d $user_net_addr -i comm-user-net-$nym_id -j ACCEPT 
+  ebtables -A PREROUTING -s $comm_user_net_addr -d $user_net_addr -i cuser-net-$nym_id -j ACCEPT 
   ebtables -A PREROUTING -s $user_net_addr -i user-net-$nym_id -p arp --arp-ip-dst 5.1.0.1 -j ACCEPT 
-  ebtables -A PREROUTING -s $comm_user_net_addr -i comm-user-net-$nym_id -p arp --arp-ip-dst 5.1.0.2 -j ACCEPT 
+  ebtables -A PREROUTING -s $comm_user_net_addr -i cuser-net-$nym_id -p arp --arp-ip-dst 5.1.0.2 -j ACCEPT 
   ebtables -A PREROUTING -i user-br-$nym_id -j DROP
   ebtables -A PREROUTING -i user-net-$nym_id -j DROP   
-  ebtables -A PREROUTING -i comm-user-net-$nym_id -j DROP
+  ebtables -A PREROUTING -i cuser-net-$nym_id -j DROP
 #  ebtables -A FORWARD -s $user_net_addr -d $comm_user_net_addr -i user-net-$nym_id -j ACCEPT 
-#  ebtables -A FORWARD -s $comm_user_net_addr -d $user_net_addr -i comm-user-net-$nym_id -j ACCEPT 
+#  ebtables -A FORWARD -s $comm_user_net_addr -d $user_net_addr -i cuser-net-$nym_id -j ACCEPT 
 #  ebtables -A FORWARD -s $user_net_addr -i user-net-$nym_id -p arp --arp-ip-dst 5.1.0.1 -j ACCEPT 
-#  ebtables -A FORWARD -s $comm_user_net_addr -i comm-user-net-$nym_id -p arp --arp-ip-dst 5.1.0.2 -j ACCEPT 
+#  ebtables -A FORWARD -s $comm_user_net_addr -i cuser-net-$nym_id -p arp --arp-ip-dst 5.1.0.2 -j ACCEPT 
 #  ebtables -A FORWARD -i user-br-$nym_id -j DROP
 #  ebtables -A FORWARD -i user-net-$nym_id -j DROP   
-#  ebtables -A FORWARD -i comm-user-net-$nym_id -j DROP
+#  ebtables -A FORWARD -i cuser-net-$nym_id -j DROP
 #  ebtables -A INPUT -i user-br-$nym_id -j DROP
 #  ebtables -A INPUT -i user-net-$nym_id -j DROP   
-#  ebtables -A INPUT -i comm-user-net-$nym_id -j DROP
+#  ebtables -A INPUT -i cuser-net-$nym_id -j DROP
 
 #  iptables -t filter -A INPUT -i user-net-$nym_id -s 5.1."$nym_id".2 -d 5.1."$nym_id".1 -j ACCEPT
 #  iptables -t filter -A INPUT -i user-net-$nym_id -j DROP
 #  iptables -t filter -A OUTPUT -o user-net-$nym_id -s 5.1."$nym_id".1 -d 5.1."$nym_id".2 -j ACCEPT
 #  iptables -t filter -A OUTPUT -o user-net-$nym_id -j DROP
 
-#  iptables -t filter -A INPUT -i comm-user-net-$nym_id -s 5.1."$nym_id".1 -d 5.1."$nym_id".0 -j ACCEPT
-#  iptables -t filter -A INPUT -i comm-user-net-$nym_id -j DROP
-#  iptables -t filter -A OUTPUT -o comm-user-net-$nym_id -s 5.1."$nym_id".2 -d 5.1."$nym_id".1 -j ACCEPT
-#  iptables -t filter -A OUTPUT -o comm-user-net-$nym_id -j DROP
+#  iptables -t filter -A INPUT -i cuser-net-$nym_id -s 5.1."$nym_id".1 -d 5.1."$nym_id".0 -j ACCEPT
+#  iptables -t filter -A INPUT -i cuser-net-$nym_id -j DROP
+#  iptables -t filter -A OUTPUT -o cuser-net-$nym_id -s 5.1."$nym_id".2 -d 5.1."$nym_id".1 -j ACCEPT
+#  iptables -t filter -A OUTPUT -o cuser-net-$nym_id -j DROP
 
   # Build Comm to Internet
 
@@ -115,7 +115,7 @@ function create_network
 function delete_network
 {
   tunctl -d user-net-$nym_id
-  tunctl -d comm-user-net-$nym_id
+  tunctl -d cuser-net-$nym_id
   brctl delbr user-br-$nym_id
   tunctl -d comm-net-$nym_id
 }
@@ -147,7 +147,7 @@ function start_comm_vm
 
   kvm \
     -net nic,model=virtio,macaddr=$comm_net_mac_addr -net tap,ifname=comm-net-$nym_id,script=,downscript= \
-    -net nic,model=virtio,macaddr=$comm_user_net_addr -net tap,ifname=comm-user-net-$nym_id,script=,downscript= \
+    -net nic,model=virtio,macaddr=$comm_user_net_addr -net tap,ifname=cuser-net-$nym_id,script=,downscript= \
     -m $mem \
     -vga std \
     -drive file=$DRIVE,if=virtio \
