@@ -35,91 +35,6 @@ if [[ ! "$MASK" ]]; then
   exit 1
 fi
 
-function create_network
-{
-  # Build User to Comm
-  tunctl -t user-net-$nym_id -u winon
-  tunctl -t cuser-net-$nym_id -u winon
-
-  brctl addbr user-br-$nym_id
-  brctl addif user-br-$nym_id user-net-$nym_id
-  brctl addif user-br-$nym_id cuser-net-$nym_id
-
-  ifconfig user-net-$nym_id 0.0.0.0
-  ifconfig cuser-net-$nym_id 0.0.0.0
-  ifconfig user-br-$nym_id 0.0.0.0
-
-  tunctl -t comm-net-$nym_id -u winon
-  ifconfig comm-net-$nym_id 5.0."$nym_id".1 netmask 255.255.255.0
-#  iptables -t mangle -A PREROUTING -j CONNMARK -i comm-net-$nym_id -s 5.0.0.2 -d 5.0.0.$(($nym_id + 2)) --set-mark $(($nym_id + 1))
-#  iptables -t nat -A PREROUTING -j DNAT -m connmark --mark $(($nym_id + 1)) --to-destination 5.0.0.1
-#  iptables -t mangle -A OUTPUT -j CONNMARK -d 5.0.0.$(($nym_id + 2)) --set-mark $(($nym_id + 1))
-#  iptables -t mangle -A POSTROUTING -j ROUTE -m mark --mark $(($nym_id + 1)) --oif comm-net-$nym_id
-#  iptables -t nat -A POSTROUTING -j SNAT -m mark --mark $(($nym_id + 1))1 --to-source 5.0.0.$(($nym_id + 2))
-
-#  brctl addif comm-br comm-net-$nym_id
-
-  gen_mac_addr
-  comm_net_mac_addr=$MACADDR
-  gen_mac_addr
-  comm_user_net_addr=$MACADDR
-  gen_mac_addr
-  user_net_addr=$MACADDR
-
-  # Block all packets that are not destined for the communication tool
-  ebtables -A PREROUTING -s $user_net_addr -d $comm_user_net_addr -i user-net-$nym_id -j ACCEPT 
-  ebtables -A PREROUTING -s $comm_user_net_addr -d $user_net_addr -i cuser-net-$nym_id -j ACCEPT 
-  ebtables -A PREROUTING -s $user_net_addr -i user-net-$nym_id -p arp --arp-ip-dst 5.1.0.1 -j ACCEPT 
-  ebtables -A PREROUTING -s $comm_user_net_addr -i cuser-net-$nym_id -p arp --arp-ip-dst 5.1.0.2 -j ACCEPT 
-  ebtables -A PREROUTING -i user-br-$nym_id -j DROP
-  ebtables -A PREROUTING -i user-net-$nym_id -j DROP   
-  ebtables -A PREROUTING -i cuser-net-$nym_id -j DROP
-#  ebtables -A FORWARD -s $user_net_addr -d $comm_user_net_addr -i user-net-$nym_id -j ACCEPT 
-#  ebtables -A FORWARD -s $comm_user_net_addr -d $user_net_addr -i cuser-net-$nym_id -j ACCEPT 
-#  ebtables -A FORWARD -s $user_net_addr -i user-net-$nym_id -p arp --arp-ip-dst 5.1.0.1 -j ACCEPT 
-#  ebtables -A FORWARD -s $comm_user_net_addr -i cuser-net-$nym_id -p arp --arp-ip-dst 5.1.0.2 -j ACCEPT 
-#  ebtables -A FORWARD -i user-br-$nym_id -j DROP
-#  ebtables -A FORWARD -i user-net-$nym_id -j DROP   
-#  ebtables -A FORWARD -i cuser-net-$nym_id -j DROP
-#  ebtables -A INPUT -i user-br-$nym_id -j DROP
-#  ebtables -A INPUT -i user-net-$nym_id -j DROP   
-#  ebtables -A INPUT -i cuser-net-$nym_id -j DROP
-
-#  iptables -t filter -A INPUT -i user-net-$nym_id -s 5.1."$nym_id".2 -d 5.1."$nym_id".1 -j ACCEPT
-#  iptables -t filter -A INPUT -i user-net-$nym_id -j DROP
-#  iptables -t filter -A OUTPUT -o user-net-$nym_id -s 5.1."$nym_id".1 -d 5.1."$nym_id".2 -j ACCEPT
-#  iptables -t filter -A OUTPUT -o user-net-$nym_id -j DROP
-
-#  iptables -t filter -A INPUT -i cuser-net-$nym_id -s 5.1."$nym_id".1 -d 5.1."$nym_id".0 -j ACCEPT
-#  iptables -t filter -A INPUT -i cuser-net-$nym_id -j DROP
-#  iptables -t filter -A OUTPUT -o cuser-net-$nym_id -s 5.1."$nym_id".2 -d 5.1."$nym_id".1 -j ACCEPT
-#  iptables -t filter -A OUTPUT -o cuser-net-$nym_id -j DROP
-
-  # Build Comm to Internet
-
-#  ebtables -A FORWARD -i comm_net_$nym_id -j DROP
-
-#  ifconfig comm-net-$nym_id 5.0."$nym_id".1 netmask 255.255.255.0
-#  iptables -t filter -A INPUT -i user-net-$nym_id -d 5.0."$nym_id".0/24 -j DROP
-
-  # Block all packets to and from the communication VM to the local network
-#  iptables -t filter -A INPUT -i comm-net-$nym_id -s 5.0."$nym_id".1 -d 5.0."$nym_id".2 -j ACCEPT
-#  iptables -t filter -A INPUT -i comm-net-$nym_id -d $ADDR/$MASK -j DROP
-#  iptables -t filter -A INPUT -i comm-net-$nym_id -s $ADDR/$MASK -j DROP
-
-#  iptables -t filter -A INPUT -o comm-net-$nym_id -s 5.0."$nym_id".2 -d 5.0."$nym_id".1 -j ACCEPT
-#  iptables -t filter -O OUTPUT -o comm-net-$nym_id -d $ADDR/$MASK -j DROP
-#  iptables -t filter -O OUTPUT -o comm-net-$nym_id -s $ADDR/$MASK -j DROP
-}
-
-function delete_network
-{
-  tunctl -d user-net-$nym_id
-  tunctl -d cuser-net-$nym_id
-  brctl delbr user-br-$nym_id
-  tunctl -d comm-net-$nym_id
-}
-
 function find_drive
 {
   DRIVE=/dev/$(ls -al /dev/disk/by-label/winon | grep -oE "../../.+" | grep -oE [a-zA-Z]+)
@@ -137,21 +52,29 @@ function start_comm_vm
   fi
   mem=128
 
-  cp -axf $NET_PATH $WPATH/$nym_id
-  NET_PATH_TO_USE=$WPATH/$nym_id
-  echo "  address 5.0."$nym_id".2" >> $NET_PATH_TO_USE/etc/network/interfaces
-  echo "  network 5.0."$nym_id".2" >> $NET_PATH_TO_USE/etc/network/interfaces
-  echo "  netmask 255.255.255.0" >> $NET_PATH_TO_USE/etc/network/interfaces
-  echo "  broadcast 5.0."$nym_id".255" >> $NET_PATH_TO_USE/etc/network/interfaces
-  echo "  gateway 5.0."$nym_id".1" >> $NET_PATH_TO_USE/etc/network/interfaces
+  gen_mac_addr
+  addr0=$MACADDR
+  gen_mac_addr
+  addr1=$MACADDR
+
+  if [[ $nym_id -le 10 ]]; then
+    port="6000"$nym_id
+  elif [[ $nym_id -le 100 ]]; then
+    port="600"$nym_id
+  else
+    port="60"$nym_id
+  fi
 
   kvm \
-    -net nic,model=virtio,macaddr=$comm_net_mac_addr -net tap,ifname=comm-net-$nym_id,script=,downscript= \
-    -net nic,model=virtio,macaddr=$comm_user_net_addr -net tap,ifname=cuser-net-$nym_id,script=,downscript= \
+    -daemonize \
+    -net nic,model=virtio,macaddr=$addr0,name=comm \
+    -net user,name=comm \
+    -net nic,model=virtio,macaddr=$addr1,name=user \
+    -net socket,name=user,mcast=230.0.0.1:$port,localaddr=127.0.0.1 \
     -m $mem \
     -vga std \
     -drive file=$DRIVE,if=virtio \
-    -virtfs local,path=$NET_PATH_TO_USE,security_model=passthrough,writeout=immediate,mount_tag=opt \
+    -virtfs local,path=$NET_PATH,security_model=passthrough,writeout=immediate,mount_tag=opt \
     -boot order=c >> /tmp/commvm 2>&1 &
 }
 
@@ -167,8 +90,20 @@ function start_user_vm
   fi
   mem=256
 
+  gen_mac_addr
+  addr=$MACADDR
+
+  if [[ $nym_id -le 10 ]]; then
+    port="6000"$nym_id
+  elif [[ $nym_id -le 100 ]]; then
+    port="600"$nym_id
+  else
+    port="60"$nym_id
+  fi
+
   QEMU_AUDIO_DRV=alsa kvm \
-    -net nic,model=virtio,macaddr=$user_net_addr -net tap,ifname=user-net-$nym_id,script=,downscript= \
+    -net nic,model=virtio,macaddr=$addr,name=user \
+    -net socket,name=user,mcast=230.0.0.1:$port,localaddr=127.0.0.1 \
     -m $mem \
     -vga std \
     -drive file=$DRIVE,if=virtio \
@@ -203,7 +138,6 @@ function start
 
   # Start nym
   echo "Starting communication network VM..."
-  create_network
   find_drive
   start_comm_vm
   echo "Done"
@@ -238,7 +172,6 @@ function stop
     pkill -KILL $PID
   done
 
-  delete_network
   rm -rf $PIDS/vms/$nym_id
 }
 

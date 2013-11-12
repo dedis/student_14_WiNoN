@@ -12,11 +12,6 @@ if [[ $? -ne 0 ]]; then
   exit 1
 fi
 
-function reset_network
-{
-  iptables -t nat -F &> /dev/null
-}
-
 function set_ip
 {
   if [[ "$DETERLAB" ]]; then
@@ -26,6 +21,7 @@ function set_ip
 
   # Wait for IP Address
   ADDR=
+  once=
   while [[ ! "$ADDR" ]]; do
     IF=eth0
     get_addr
@@ -61,33 +57,6 @@ function set_time
   fi
 }
 
-function remove_nat
-{
-  iptables -t nat -D POSTROUTING -o $IF -j MASQUERADE
-  echo 1 > /proc/sys/net/ipv4/ip_forward
-  iptables -D INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
-  iptables -D INPUT -m state --state NEW ! -i $IF -j ACCEPT
-  iptables -D INPUT DROP
-  iptables -D FORWARD -i $IF -o $IF -j REJECT
-
-#  brctl delbr comm-br
-}
-
-function setup_nat
-{
-  # http://www.ibiblio.org/pub/linux/docs/howto/other-formats/html_single/Masquerading-Simple-HOWTO.html
-  iptables -t nat -A POSTROUTING -o $IF -j MASQUERADE
-  echo 1 > /proc/sys/net/ipv4/ip_forward
-  iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
-  iptables -A INPUT -m state --state NEW ! -i $IF -j ACCEPT
-  iptables -P INPUT DROP
-  iptables -A FORWARD -i $IF -o $IF -j REJECT
-
-#  brctl addbr comm-br
-#  ifconfig comm-br 5.0.0.1 netmask 255.255.255.0
-#  iptables -t nat -A OUTPUT -j DNAT -m mark ! --mark 0 --to-destination 5.0.0.2
-}
-
 function start_sanitization_vm
 {
   mem=$(( $(free -m | grep Mem | awk '{print $2}') / 5 ))
@@ -118,6 +87,7 @@ function start_sanitization_vm
   DRIVE=/dev/$(ls -al /dev/disk/by-label/winon | grep -oE "../../.+" | grep -oE [a-zA-Z]+)
 
   kvm \
+    -daemonize \
     -m $mem \
     -vga std \
     -drive file=$DRIVE,if=virtio \
@@ -125,7 +95,7 @@ function start_sanitization_vm
     -net nic -net none \
     -virtfs local,path=$SANITIZATION_PATH,security_model=passthrough,writeout=immediate,mount_tag=opt \
     -virtfs local,path=$SANITIZATION_INPUT,security_model=passthrough,writeout=immediate,mount_tag=sani \
-    $drives >> /tmp/sanivm 2>&1 &
+    $drives >> /tmp/sanivm 2>&1
   echo $! > $PIDS/sanivm
 
   python2 $WHOME/.winon/sani_monitor.py &
@@ -147,12 +117,11 @@ function start
   fi
 
   echo "Host configuration: Starting"
-  reset_network
   set_ip
   echo "Network configured, using: $ADDR"
-  setup_nat
   start_sanitization_vm
   echo "Host configuration: Done"
+  sleep 5
 
   echo $IF > $WPATH/started
 }
@@ -170,8 +139,6 @@ function stop
   fi
 
   IF=$(cat $WPATH/started)
-  remove_nat
-
   rm $WPATH/started
 }
 

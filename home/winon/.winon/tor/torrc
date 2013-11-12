@@ -16,4 +16,4 @@ UseBridges 0
 UseEntryGuards 1
 NumEntryGuards 3
 SafeSocks 0
-DNSPort 5.2.0.1:53
+DNSPort 10.2.0.1:53

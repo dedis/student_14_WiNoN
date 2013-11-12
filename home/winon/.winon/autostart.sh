@@ -5,5 +5,5 @@ if [[ $? -ne 0 ]]; then
   exit 1
 fi
 
-xterm -e bash -c "$WPATH/host.sh start" &
+xterm -e bash -c "$WPATH/host.sh start"
 exit 0

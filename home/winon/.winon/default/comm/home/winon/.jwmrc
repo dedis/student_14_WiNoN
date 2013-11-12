@@ -7,36 +7,6 @@
    <RootMenu height="15" onroot="12">
       <Program icon="terminal.png" label="Terminal">xterm</Program>
 
-<!-- #DEBIAN
-      <Menu icon="folder.png" label="Applications">
-         <Program icon="editor.png" label="Dia">dia</Program>
-         <Program icon="www.png" label="Firefox">firefox</Program>
-         <Program icon="gimp.png" label="Gimp">gimp</Program>
-         <Program icon="mail.png" label="Mutt">
-            xterm -e mutt
-         </Program>
-         <Program icon="word-processor.png" label="Open Office">  
-            ooffice
-         </Program>
-         <Program icon="chat.png" label="Pidgin">pidgin</Program>
-         <Program icon="music.png" label="Rhythmbox">rhythmbox</Program>
-         <Program icon="development.png" label="Xilinx ISE">
-            /usr/local/xilinx/bin/ise
-         </Program>
-         <Program icon="video.png" label="Xine">gxine</Program>
-      </Menu>
-      <Menu icon="folder.png" label="Utilities">
-         <Program icon="calculator.png" label="Calculator">xcalc</Program>
-         <Program icon="font.png" label="Fonts">xfontsel</Program>
-         <Program icon="viewer.png" label="Magnify">xmag</Program>
-         <Program icon="programs.png" label="Synaptic">
-            gksudo synaptic
-         </Program>
-         <Program icon="window.png" label="Window Properties">
-            xprop | xmessage -file -
-         </Program>
-      </Menu>
--->
       <Separator/>
       <Program icon="lock.png" label="Lock">
          xscreensaver-command -activate
