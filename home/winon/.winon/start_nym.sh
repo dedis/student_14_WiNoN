@@ -68,7 +68,7 @@ function start_comm_vm
   kvm \
     -daemonize \
     -net nic,model=virtio,macaddr=$addr0,name=comm \
-    -net user,name=comm \
+    -net user,name=comm,net=$IPBASE.2.0/24 \
     -net nic,model=virtio,macaddr=$addr1,name=user \
     -net socket,name=user,mcast=230.0.0.1:$port,localaddr=127.0.0.1 \
     -m $mem \

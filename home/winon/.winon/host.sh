@@ -14,21 +14,16 @@ fi
 
 function set_ip
 {
-  if [[ "$DETERLAB" ]]; then
-    ifconfig eth0 10.0.0.7 netmask 255.255.255.0
-    route add -net 0.0.0.0 gw 10.0.0.254
-  fi
-
   # Wait for IP Address
   ADDR=
   once=
   while [[ ! "$ADDR" ]]; do
     IF=eth0
     get_addr
-    if [[ $? -ne 0 ]]; then
+    if [[ ! "$ADDR" ]]; then
       IF=wlan0
       get_addr
-      if [[ $? -ne 0 ]]; then
+      if [[ ! "$ADDR" ]]; then
         if [[ ! "$once" ]]; then
           echo "Starting WICD, connect to a network, "\
             "and progress will continue automatically"
@@ -45,16 +40,18 @@ function set_ip
 
 function set_time
 {
-  if [[ ! "$DETERLAB" ]]; then
-    ntpdate pool.ntp.org &> /dev/null
-    while [[ $? -eq 1 ]]; do
-      sleep 1
-      result=$(ntpdate pool.ntp.org 2>&1)
-      if [[ $? -eq 1 ]]; then
-        echo $result | grep "no server suitable" &> /dev/null
-      fi
-    done
+  if [[ "$DETERLAB" ]]; then
+    return
   fi
+
+  ntpdate pool.ntp.org &> /dev/null
+  while [[ $? -eq 1 ]]; do
+    sleep 1
+    result=$(ntpdate pool.ntp.org 2>&1)
+    if [[ $? -eq 1 ]]; then
+      echo $result | grep "no server suitable" &> /dev/null
+    fi
+  done
 }
 
 function start_sanitization_vm
