@@ -1,3 +1,23 @@
 #!/bin/bash
-# wget a special port that redirects to a specific website if and only if from this ip address
-# if successful we're done
+source /etc/default/winon 2> /dev/null
+if [[ $? -ne 0 ]]; then
+  echo "Error reading /etc/default/winon"
+  exit 1
+fi
+
+source $WPATH/common.sh 2> /dev/null
+if [[ $? -ne 0 ]]; then
+  echo "Error reading $WPATH/common.sh"
+  exit 1
+fi
+
+nym=$1
+set_root $0 $nym
+if [[ $? -ne 0 ]]; then
+  exit 1
+fi
+
+result=
+while [[ ! "$result" ]]; do
+  result=$(nc -w 1 -U $WPATH/nym/$nym)
+done

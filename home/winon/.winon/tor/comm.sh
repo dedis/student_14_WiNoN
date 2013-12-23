@@ -35,3 +35,10 @@ iptables -t nat -A PREROUTING -i eth1 -p udp --dport 53 -j DNAT --to-destination
 #iptables -t filter -i eth1 -j DROP
 
 $WHOME/.winon/redsocks -c $WHOME/.winon/redsocks.conf &> /dev/null &
+
+i=0
+while [[ $i -le 10 ]]; do
+  i=$(expr $i + 1)
+  echo QUIT > /dev/vport0p2
+  sleep 1
+done

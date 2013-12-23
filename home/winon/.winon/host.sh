@@ -85,6 +85,7 @@ function start_sanitization_vm
 
   kvm \
     -daemonize \
+    --name ScrubberVM \
     -m $mem \
     -vga std \
     -drive file=$DRIVE,if=virtio \

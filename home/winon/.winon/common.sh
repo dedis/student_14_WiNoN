@@ -57,6 +57,27 @@ function get_mask
   fi
 }
 
+function get_pid
+{
+  PID=$(pgrep -f $APP)
+  while [[ ! "$PID" ]]; do
+    sleep 1
+    PID=$(pgrep -f $APP)
+  done
+
+  if [[ "$called" ]]; then
+    echo -n $PID
+  fi
+}
+
+function wait_app
+{
+  get_pid
+  while [[ ! "$(wmctrl -l | grep -i $APP | awk '{print $1}')" ]]; do
+    sleep 1
+  done
+}
+
 if [[ "$(basename $0)" == "common.sh" ]]; then
   called=TRUE
   funct=$1

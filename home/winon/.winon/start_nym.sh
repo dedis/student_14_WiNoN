@@ -50,7 +50,7 @@ function start_comm_vm
     # For 32-bit hosts, which is our current target
     mem=2047
   fi
-  mem=128
+  mem=256
 
   gen_mac_addr
   addr0=$MACADDR
@@ -66,7 +66,8 @@ function start_comm_vm
   fi
 
   kvm \
-    -daemonize \
+    -sdl \
+    --name CommVM-$nym_id \
     -net nic,model=virtio,macaddr=$addr0,name=comm \
     -net user,name=comm,net=$IPBASE.2.0/24 \
     -net nic,model=virtio,macaddr=$addr1,name=user \
@@ -74,8 +75,14 @@ function start_comm_vm
     -m $mem \
     -vga std \
     -drive file=$DRIVE,if=virtio \
-    -virtfs local,path=$NET_PATH,security_model=passthrough,writeout=immediate,mount_tag=opt \
+    -virtfs local,path=$NET_PATH,security_model=passthrough,writeout=immediate,mount_tag=opt,readonly \
+    -chardev socket,id=info,path=/home/winon/.winon/nym/$nym_id,server,nowait \
+    -device virtio-serial -device virtserialport,chardev=info,id=info0,nr=2 \
     -boot order=c >> /tmp/commvm 2>&1 &
+
+  APP="CommVM-$nym_id"
+  wait_app
+  wmctrl -i -r $(wmctrl -l | grep $APP | awk '{print $1}') -e '0,0,0,-1,-1'
 }
 
 function start_user_vm
@@ -88,7 +95,7 @@ function start_user_vm
     # For 32-bit hosts, which is our current target
     mem=2047
   fi
-  mem=256
+  mem=512
 
   gen_mac_addr
   addr=$MACADDR
@@ -102,15 +109,23 @@ function start_user_vm
   fi
 
   QEMU_AUDIO_DRV=alsa kvm \
+    -sdl \
+    --name AnonVM-$nym_id \
     -net nic,model=virtio,macaddr=$addr,name=user \
     -net socket,name=user,mcast=230.0.0.1:$port,localaddr=127.0.0.1 \
     -m $mem \
     -vga std \
     -drive file=$DRIVE,if=virtio \
-    -virtfs local,path=$USER_PATH,security_model=passthrough,writeout=immediate,mount_tag=opt \
-    -virtfs local,path=$SANITIZATION_OUTPUT,security_model=passthrough,writeout=immediate,mount_tag=sani \
+    -virtfs local,path=$USER_PATH,security_model=passthrough,writeout=immediate,mount_tag=opt,readonly \
+    -virtfs local,path=$SANITIZATION_OUTPUT,security_model=passthrough,writeout=immediate,mount_tag=sani,readonly \
     -soundhw ac97 \
-    -boot order=c >> /tmp/uservm 2>&1
+    -boot order=c >> /tmp/uservm 2>&1 &
+
+  APP="AnonVM-$nym_id"
+  wait_app
+  get_pid
+  wmctrl -i -r $(wmctrl -l | grep $APP | awk '{print $1}') -e '0,0,0,-1,-1'
+  wait $PID
 }
 
 function start
@@ -142,7 +157,7 @@ function start
   start_comm_vm
   echo "Done"
   if [[ "$COMM_CHECK" ]]; then
-    bash $COMM_CHECK
+    bash $COMM_CHECK $nym_id
   fi
   echo "Starting the browser VM..."
   start_user_vm
