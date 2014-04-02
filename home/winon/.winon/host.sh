@@ -84,14 +84,14 @@ function start_sanitization_vm
   DRIVE=/dev/$(ls -al /dev/disk/by-label/winon | grep -oE "../../.+" | grep -oE [a-zA-Z]+)
 
   kvm \
+    -sdl \
     -daemonize \
     --name ScrubberVM \
+    -net nic -net none \
     -m $mem \
     -vga std \
     -drive file=$DRIVE,if=virtio \
-    -boot order=c \
-    -net nic -net none \
-    -virtfs local,path=$SANITIZATION_PATH,security_model=passthrough,writeout=immediate,mount_tag=opt \
+    -virtfs local,path=$SANITIZATION_PATH,security_model=passthrough,writeout=immediate,mount_tag=opt,readonly \
     -virtfs local,path=$SANITIZATION_INPUT,security_model=passthrough,writeout=immediate,mount_tag=sani \
     $drives >> /tmp/sanivm 2>&1
   echo $! > $PIDS/sanivm
@@ -138,6 +138,16 @@ function stop
 
   IF=$(cat $WPATH/started)
   rm $WPATH/started
+
+  if [ -e $PIDS/sanivm ]; then
+    kill -KILL $(cat $PIDS/sanivm)
+    rm $PIDS/sanivm
+  fi
+
+  if [ -e $PIDS/sanivm ]; then
+    kill -KILL $(cat $PIDS/sanimon)
+    rm $PIDS/sanimon
+  fi
 }
 
 case "$1" in
