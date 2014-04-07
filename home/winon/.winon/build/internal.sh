@@ -1,0 +1,131 @@
+#!/bin/bash
+export PATH=$PATH:/bin:/sbin:/usr/bin:/usr/sbin
+
+function base_setup
+{
+  mv /sbin/initctl /sbin/initctl.bak
+  ln -s /bin/true /sbin/initctl
+  # Update, upgrade, and install base packages
+  apt-get update
+  apt-get dist-upgrade -y --force-yes --no-install-recommends
+  apt-get install -y --force-yes --no-install-recommends \
+    alsa-utils \
+    chromium-browser \
+    flashplugin-installer \
+    iptables \
+    jwm \
+    linux-image-generic \
+    python3 \
+    qemu-kvm \
+    tor \
+    wget \
+    wicd-gtk \
+    wmctrl \
+    xinit \
+    xfe \
+    xserver-xorg \
+    xterm
+  ln -s /usr/bin/vi /usr/bin/vim
+  # Create user account
+  useradd -b /home/ -G sudo,audio,video,users,kvm,netdev -m -s /bin/bash -U winon
+  echo "winon:password" | chpasswd
+  # Setup locale and timezone
+  ln -sf /usr/share/zoneinfo/UTC /etc/localtime
+  echo "export LANG=C" >> /root/.bashrc
+  echo "export LANG=C" >> /home/winon/.bashrc
+  # Cleanup
+  service tor stop
+  update-rc.d tor disable
+  echo 'manual' > /etc/init/tor.override
+  apt-get clean -y --force-yes
+  apt-get autoremove -y --force-yes
+
+  mv /sbin/initctl.bak /sbin/initctl
+  chown -R winon:winon /home/winon
+}
+
+function builder_setup
+{
+  mv /sbin/initctl /sbin/initctl.bak
+  ln -s /bin/true /sbin/initctl
+  # Update, upgrade, and install base packages
+  apt-get update
+  apt-get install -y --force-yes --no-install-recommends \
+    autoconf \
+    automake \
+    binutils \
+    g++ \
+    gcc \
+    git \
+    grub \
+    libevent-dev \
+    linux-headers-generic \
+    make \
+    mawk
+  # Cleanup
+  service tor stop
+  update-rc.d tor disable
+  echo 'manual' > /etc/init/tor.override
+  apt-get clean -y --force-yes
+  apt-get autoremove -y --force-yes
+}
+
+function image_build
+{
+  mount -oloop,offset=1048576 image.img /mnt
+  mkdir -p /mnt/boot/grub
+  cp /usr/lib/grub/*/stage1 /mnt/boot/grub/.
+  cp /usr/lib/grub/*/e2fs_stage1_5 /mnt/boot/grub/.
+  cp /usr/lib/grub/*/stage2 /mnt/boot/grub/.
+
+  cd /home/src/kvm-kmod
+  git pull
+  git submodule update
+
+  kernel=/lib/modules/$(ls /lib/modules)
+  arch=i386
+  grep "# CONFIG_64BIT is not set" $kernel/build/.config &> /dev/null
+  if [[ $? -ne 0 ]]; then
+    arch=x86_64
+  fi
+
+  ./configure --arch=$arch --kerneldir=$kernel/build
+  make sync 
+  make
+  cp x86/*ko /mnt/$kernel/kernel/arch/x86/kvm/.
+
+  cd /home/src/redsocks
+  git pull
+  make
+  cp redsocks /mnt/home/winon/.winon/redsocks
+  chown winon:winon /mnt/home/winon/.winon/redsocks
+
+  umount /mnt
+
+  cd /
+  echo "device (hd0) image.img
+    root (hd0,0)
+    setup (hd0)
+    quit" | grub --batch --device-map=/dev/null
+}
+
+function update
+{
+  mv /sbin/initctl /sbin/initctl.bak
+  ln -s /bin/true /sbin/initctl
+  # Update, upgrade, and install base packages
+  apt-get update
+  apt-get dist-upgrade -y --force-yes --no-install-recommends
+  update-initramfs -u
+  # Cleanup
+  service tor stop
+  update-rc.d tor disable
+  echo 'manual' > /etc/init/tor.override
+  apt-get clean -y --force-yes
+  apt-get autoremove -y --force-yes
+
+  mv /sbin/initctl.bak /sbin/initctl
+  chown -R winon:winon /home/winon
+}
+
+$1
