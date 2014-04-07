@@ -114,6 +114,12 @@ function start
     exit 1
   fi
 
+  for dir in $PIDS $PIDS/vms $WPATH/input $WPATH/output $WPATH/nym; do
+    if [[ ! -e $dir ]]; then
+      mkdir -p $dir
+    fi
+  done
+
   echo "Host configuration: Starting"
   set_ip
   echo "Network configured, using: $ADDR"
@@ -132,19 +138,19 @@ function stop
   fi
 
   set_root $0 stop
-  if [[ $? ]]; then
+  if [[ $? -ne 0 ]]; then
     exit 1
   fi
 
   IF=$(cat $WPATH/started)
   rm $WPATH/started
 
-  if [ -e $PIDS/sanivm ]; then
+  if [[ -e $PIDS/sanivm ]]; then
     kill -KILL $(cat $PIDS/sanivm)
     rm $PIDS/sanivm
   fi
 
-  if [ -e $PIDS/sanivm ]; then
+  if [[ -e $PIDS/sanimon ]]; then
     kill -KILL $(cat $PIDS/sanimon)
     rm $PIDS/sanimon
   fi

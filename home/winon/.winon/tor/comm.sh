@@ -39,6 +39,8 @@ $WHOME/.winon/redsocks -c $WHOME/.winon/redsocks.conf &> /dev/null &
 i=0
 while [[ $i -le 10 ]]; do
   i=$(expr $i + 1)
-  echo QUIT > /dev/vport0p2
+  for dev in $(ls /dev/vport*); do
+    echo QUIT > $dev
+  done
   sleep 1
 done

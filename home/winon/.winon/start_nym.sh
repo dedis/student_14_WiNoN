@@ -172,7 +172,7 @@ function stop
     exit 1
   fi
 
-  if [[ "$1" ]]; then
+  if [[ ! "$1" ]]; then
     echo "No Nym Id specified"
     exit 1
   fi
