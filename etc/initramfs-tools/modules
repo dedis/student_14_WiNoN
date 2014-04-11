@@ -9,7 +9,7 @@
 #
 # raid1
 # sd_mod
-aufs
+overlayfs
 9p
 9pnet
 9pnet_virtio
