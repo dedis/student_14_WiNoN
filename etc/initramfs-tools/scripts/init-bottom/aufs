@@ -184,7 +184,6 @@ if [ "$opt" -eq 1 ]; then
     fi
 fi
 
-
 #*********** fix fstab on tmpfs ******************
 # test for /dev/sdx 
 # this is not on the real file system.  This is created on the tmpfs each time the system boots.
@@ -273,6 +272,13 @@ if [ "0$aufsdebug" -eq 1 ]; then
     echo '   root-aufs debug:   init will stop here.   '
     echo  
     exit 0
+fi
+
+# copy persisted data into tmpfs
+mkdir /aufs/rw_prst
+mount -v -t 9p -o trans=virtio,version=9p2000.L prst /aufs/rw_prst
+if [[ $? -eq 0 ]]; then
+    [ -e /aufs/rw_prst/persist.cpio ] && (cd /aufs/rw && cpio -i < /aufs/rw_prst/persist.cpio)
 fi
 
 mount --move /aufs ${rootmnt}

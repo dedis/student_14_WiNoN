@@ -7,6 +7,7 @@
    <RootMenu height="15" onroot="12">
       <Program icon="terminal.png" label="Terminal">xterm</Program>
       <Program icon="chromium-browser.png" label="Chromium">chromium-browser</Program>
+      <Program icon="terminal.png" label="Snapshot">xterm -hold -e "cd /home/winon/.winon && ./snapshot.sh"</Program>
 
       <Separator/>
       <Program icon="lock.png" label="Lock">

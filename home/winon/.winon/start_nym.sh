@@ -76,6 +76,7 @@ function start_comm_vm
     -vga std \
     -drive file=$DRIVE,if=virtio \
     -virtfs local,path=$NET_PATH,security_model=passthrough,writeout=immediate,mount_tag=opt,readonly \
+    -virtfs local,path=$PERSIST_PATH/$nym_id/comm,security_model=passthrough,writeout=immediate,mount_tag=prst \
     -chardev socket,id=info,path=/home/winon/.winon/nym/$nym_id,server,nowait \
     -device virtio-serial -device virtserialport,chardev=info,id=info0,nr=2 \
     -boot order=c >> /tmp/commvm 2>&1 &
@@ -117,6 +118,7 @@ function start_user_vm
     -vga std \
     -drive file=$DRIVE,if=virtio \
     -virtfs local,path=$USER_PATH,security_model=passthrough,writeout=immediate,mount_tag=opt,readonly \
+    -virtfs local,path=$PERSIST_PATH/$nym_id/user,security_model=passthrough,writeout=immediate,mount_tag=prst \
     -virtfs local,path=$SANITIZATION_OUTPUT,security_model=passthrough,writeout=immediate,mount_tag=sani,readonly \
     -soundhw ac97 \
     -boot order=c >> /tmp/uservm 2>&1 &
@@ -130,7 +132,7 @@ function start_user_vm
 
 function start
 {
-  set_root $0 start
+  set_root $0 start $1
   if [[ $? -ne 0 ]]; then
     exit 1
   fi
@@ -150,6 +152,15 @@ function start
   mkdir $PIDS/vms/$nym_id
   # So we can tell the VM which Nym it owns
   touch $PIDS/vms/$nym_id/$nym_id
+
+  # Loading a persisted nym
+  mkdir -p $PERSIST_PATH/$nym_id
+  if [[ ! "$1" ]]; then
+    $WPATH/download.sh $nym_id
+  fi
+
+  mkdir -p $PERSIST_PATH/$nym_id/comm
+  mkdir -p $PERSIST_PATH/$nym_id/user
 
   # Start nym
   echo "Starting communication network VM..."
@@ -172,7 +183,7 @@ function stop
     exit 1
   fi
 
-  if [[ ! "$1" ]]; then
+  if [[ "$1" ]]; then
     echo "No Nym Id specified"
     exit 1
   fi
@@ -191,6 +202,8 @@ function stop
 }
 
 case "$1" in
+  restore) start restore
+    ;;
   start) start
     ;;
   stop) stop $2
