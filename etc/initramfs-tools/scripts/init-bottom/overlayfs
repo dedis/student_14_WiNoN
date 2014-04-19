@@ -121,10 +121,8 @@ if [ $? -ne 0 ]; then
     exit 0
 fi
 
-# if prst was passed through, use it as the ${ROOT_RW}
-modprobe 9p
-modprobe 9pnet_virtio
-mount -v -t 9p -o trans=virtio,version=9p2000.L prst ${ROOT_RW}
+# if peristent storage was passed through, use it as the ${ROOT_RW}
+mount -v -t ext2 -o loop /dev/vdb ${ROOT_RW}
 if [[ $? -ne 0 ]]; then
     # otherwise mount a tmpfs using the device name tmpfs-root at ${ROOT_RW}
     log_warning_msg "${MYTAG} WARNING: no prst, using tmpfs"
@@ -136,6 +134,8 @@ if [[ $? -ne 0 ]]; then
 fi
 
 # if opt was passed through, mount it on ${ROOT_RO_OPT}
+modprobe 9p
+modprobe 9pnet_virtio
 mount -v -t 9p -o trans=virtio,version=9p2000.L opt ${ROOT_RO_OPT}
 if [[ $? -ne 0 ]]; then
     log_warning_msg "${MYTAG} WARNING: no opt passed through"

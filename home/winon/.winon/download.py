@@ -47,12 +47,7 @@ file_index = int(raw_input('Restore nym #: ').strip())
 download_url = files['items'][file_index]['downloadUrl']
 resp, content = drive_service._http.request(download_url)
 if resp.status == 200:
-  try:
-    out_file = open(sys.argv[1], 'w')
+  with open(sys.argv[1], 'w') as out_file:
     out_file.write(content)
     exit(0)
-  except:
-    exit(1)
-else:
-  exit(1)
-  
+exit(1)

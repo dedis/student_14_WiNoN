@@ -20,7 +20,9 @@ fi
 nym_id=$1
 
 # Download nym
-python2.7 $WPATH/download.py $PERSIST_PATH/$nym_id.enc
+DOWNLOAD_PATH=$WPATH/downloads
+rm -rf $DOWNLOAD_PATH/*
+python2.7 $WPATH/download.py $DOWNLOAD_PATH/nym.enc
 #if [ $? -ne 0 ]; then
 #  echo "Failed downloading nym from cloud."
 #  exit 1
@@ -29,10 +31,12 @@ python2.7 $WPATH/download.py $PERSIST_PATH/$nym_id.enc
 # Decrypt and extract
 set -e
 set -o pipefail
-cd $PERSIST_PATH/$nym_id 
-openssl aes-256-cbc -d -in $PERSIST_PATH/$nym_id.enc | tar -xjp
-
+cd $DOWNLOAD_PATH
+openssl aes-256-cbc -d -in $DOWNLOAD_PATH/nym.enc | tar -xjpS
 if [ $? -ne 0 ]; then
   echo "Failed extracting encrypted archive."
   exit 1
 fi
+
+# Start the nym
+$WPATH/start_nym.sh start $DOWNLOAD_PATH

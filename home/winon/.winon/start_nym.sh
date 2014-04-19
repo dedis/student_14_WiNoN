@@ -65,6 +65,16 @@ function start_comm_vm
     port="60"$nym_id
   fi
 
+  PERSIST_IMG=$PERSIST_PATH/$nym_id/comm.img
+  if [[ -z "$1" || ! -f "$PERSIST_IMG" ]]; then
+    dd if=/dev/null of=$PERSIST_IMG bs=256M count=1 seek=1
+    LOOP=$(losetup -f)
+    losetup $LOOP $PERSIST_IMG
+    mkfs.ext2 -m0 $LOOP
+    e2label $LOOP persist
+    losetup -d $LOOP
+  fi
+
   kvm \
     -sdl \
     --name CommVM-$nym_id \
@@ -75,14 +85,15 @@ function start_comm_vm
     -m $mem \
     -vga std \
     -drive file=$DRIVE,if=virtio \
+    -drive file=$PERSIST_IMG,if=virtio \
     -virtfs local,path=$NET_PATH,security_model=passthrough,writeout=immediate,mount_tag=opt,readonly \
-    -virtfs local,path=$PERSIST_PATH/$nym_id/comm,security_model=passthrough,writeout=immediate,mount_tag=prst \
     -chardev socket,id=info,path=/home/winon/.winon/nym/$nym_id,server,nowait \
     -device virtio-serial -device virtserialport,chardev=info,id=info0,nr=2 \
     -boot order=c >> /tmp/commvm 2>&1 &
 
   APP="CommVM-$nym_id"
   wait_app
+  get_pid
   wmctrl -i -r $(wmctrl -l | grep $APP | awk '{print $1}') -e '0,0,0,-1,-1'
 }
 
@@ -109,6 +120,16 @@ function start_user_vm
     port="60"$nym_id
   fi
 
+  PERSIST_IMG=$PERSIST_PATH/$nym_id/user.img
+  if [[ -z "$1" || ! -f "$PERSIST_IMG" ]]; then
+    dd if=/dev/null of=$PERSIST_IMG bs=256M count=1 seek=1
+    LOOP=$(losetup -f)
+    losetup $LOOP $PERSIST_IMG
+    mkfs.ext2 -m0 $LOOP
+    e2label $LOOP persist
+    losetup -d $LOOP
+  fi
+
   QEMU_AUDIO_DRV=alsa kvm \
     -sdl \
     --name AnonVM-$nym_id \
@@ -117,8 +138,8 @@ function start_user_vm
     -m $mem \
     -vga std \
     -drive file=$DRIVE,if=virtio \
+    -drive file=$PERSIST_IMG,if=virtio \
     -virtfs local,path=$USER_PATH,security_model=passthrough,writeout=immediate,mount_tag=opt,readonly \
-    -virtfs local,path=$PERSIST_PATH/$nym_id/user,security_model=passthrough,writeout=immediate,mount_tag=prst \
     -virtfs local,path=$SANITIZATION_OUTPUT,security_model=passthrough,writeout=immediate,mount_tag=sani,readonly \
     -soundhw ac97 \
     -boot order=c >> /tmp/uservm 2>&1 &
@@ -149,29 +170,29 @@ function start
     exit 1
   fi
 
-  mkdir $PIDS/vms/$nym_id
-  # So we can tell the VM which Nym it owns
-  touch $PIDS/vms/$nym_id/$nym_id
-
-  # Loading a persisted nym
   mkdir -p $PERSIST_PATH/$nym_id
-  if [[ ! "$1" ]]; then
-    $WPATH/download.sh $nym_id
-  fi
 
-  mkdir -p $PERSIST_PATH/$nym_id/comm
-  mkdir -p $PERSIST_PATH/$nym_id/user
+  # Restoring a persisted nym
+  if [[ "$1" && -d "$1" ]]; then
+    nym_path=$1
+    rm -rf $PERSIST_PATH/$nym_id/*
+    cp $nym_path/* $PERSIST_PATH/$nym_id
+  fi
 
   # Start nym
   echo "Starting communication network VM..."
   find_drive
-  start_comm_vm
+  start_comm_vm $1
+  mkdir $PIDS/vms/$nym_id
+  # So we can tell the VM which Nym it owns
+  touch $PIDS/vms/$nym_id/$PID
   echo "Done"
   if [[ "$COMM_CHECK" ]]; then
     bash $COMM_CHECK $nym_id
   fi
+
   echo "Starting the browser VM..."
-  start_user_vm
+  start_user_vm $1
   echo "Browsing VM shutdown, turning off services"
   stop $nym_id
 }
@@ -183,7 +204,7 @@ function stop
     exit 1
   fi
 
-  if [[ "$1" ]]; then
+  if [[ ! "$1" ]]; then
     echo "No Nym Id specified"
     exit 1
   fi
@@ -194,17 +215,15 @@ function stop
   fi
 
   nym_id=$1
-  for $PID in $(ls $PIDS/vms/$nym_id); do
-    pkill -KILL $PID
+  for PID in $(ls $PIDS/vms/$nym_id); do
+    kill -KILL $PID
   done
 
   rm -rf $PIDS/vms/$nym_id
 }
 
 case "$1" in
-  restore) start restore
-    ;;
-  start) start
+  start) start $2
     ;;
   stop) stop $2
     ;;
