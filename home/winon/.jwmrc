@@ -7,6 +7,8 @@
    <RootMenu height="15" onroot="12">
       <Program icon="terminal.png" label="Terminal">xterm</Program>
       <Program icon="gksu.png" label="Pseudonym">bash /home/winon/.winon/start_nym.sh start</Program>
+      <Program icon="gksu.png" label="Restore Nym">xterm -e /home/winon/.winon/download.sh</Program>
+      <Program icon="terminal.png" label="Save Nym">xterm -hold -e "cd /home/winon/.winon && ./upload.sh"</Program>
       <Separator/>
       <Program icon="lock.png" label="Lock">
          xscreensaver-command -activate
