@@ -2,18 +2,17 @@
 ARCH=amd64
 #ARCH=i386
 VERSION=trusty
-VERSION=trusty
 TVERSION=saucy
 BASE=trusty-64
 BASEDIR=$PWD
 INSTPATH=$BASEDIR/$BASE
 BUILDERPATH=$BASEDIR//"$BASE"-build
 URL=http://mirror.anl.gov/pub/ubuntu/
+#URL=http://archive.ubuntu.com/ubuntu
 IMAGE=$BASEDIR/"$BASE".img
 SIZE=2048
 WINON=$(readlink -f ../../../..)
 MOUNT=mount
-#URL=http://archive.ubuntu.com/ubuntu
 
 if [[ $(id -u) -ne 0 ]]; then
   echo "Run as root"
@@ -82,13 +81,6 @@ function base_setup
 function builder_setup
 {
   cp -axf $INSTPATH $BUILDERPATH
-  mkdir $BUILDERPATH/home/src
-  git clone git://github.com/darkk/redsocks.git $BUILDERPATH/home/src/redsocks
-  git clone http://git.kiszka.org/kvm-kmod.git $BUILDERPATH/home/src/kvm-kmod
-  cd $BUILDERPATH/home/src/kvm-kmod
-  git submodule init
-  cd -
-
   chroot_do $BUILDERPATH builder_setup
 }
 
@@ -124,7 +116,6 @@ function image
 
 function update
 {
-
   tmpdir=/tmp/$RANDOM
   git clone $WINON $tmpdir
   cp -axf $tmpdir/* $INSTPATH/.
