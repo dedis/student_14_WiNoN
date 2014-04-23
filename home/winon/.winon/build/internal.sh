@@ -81,27 +81,31 @@ function builder_setup
 
 function build_packages
 {
-  cd /home/src/kvm-kmod
-  git pull
-  git submodule update
+  if [[ -d /home/src/kvm-kmod ]]; then
+    cd /home/src/kvm-kmod
+    git pull
+    git submodule update
 
-  kernel=/lib/modules/$(uname -r)
-  if [[ ! -d $kernel ]]; then
-    kernel=/lib/modules/$(echo $(ls /lib/modules) | awk '{print $1}')
+    kernel=/lib/modules/$(uname -r)
+    if [[ ! -d $kernel ]]; then
+      kernel=/lib/modules/$(echo $(ls /lib/modules) | awk '{print $1}')
+    fi
+    arch=i386
+    grep "# CONFIG_64BIT is not set" $kernel/build/.config &> /dev/null
+    if [[ $? -ne 0 ]]; then
+      arch=x86_64
+    fi
+
+    ./configure --arch=$arch --kerneldir=$kernel/build
+    make sync
+    make
   fi
-  arch=i386
-  grep "# CONFIG_64BIT is not set" $kernel/build/.config &> /dev/null
-  if [[ $? -ne 0 ]]; then
-    arch=x86_64
+
+  if [[ -d /home/src/redsocks ]]; then
+    cd /home/src/redsocks
+    git pull
+    make
   fi
-
-  ./configure --arch=$arch --kerneldir=$kernel/build
-  make sync 
-  make
-
-  cd /home/src/redsocks
-  git pull
-  make
 }
 
 function image_build
@@ -113,7 +117,7 @@ function image_build
   cp /usr/lib/grub/*/stage2 /mnt/boot/grub/.
 
   build_packages
-  cp /home/src/kvm-kod/x86/*ko /mnt/$kernel/kernel/arch/x86/kvm/.
+  cp /home/src/kvm-kmod/x86/*ko /mnt/$kernel/kernel/arch/x86/kvm/.
   cp /home/src/redsocks/redsocks /mnt/home/winon/.winon/redsocks
   chown winon:winon /mnt/home/winon/.winon/redsocks
 
