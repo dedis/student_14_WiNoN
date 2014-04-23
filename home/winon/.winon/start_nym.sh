@@ -68,11 +68,7 @@ function start_comm_vm
   PERSIST_IMG=$PERSIST_PATH/$nym_id/comm.img
   if [[ -z "$1" || ! -f "$PERSIST_IMG" ]]; then
     dd if=/dev/null of=$PERSIST_IMG bs=256M count=1 seek=1
-    LOOP=$(losetup -f)
-    losetup $LOOP $PERSIST_IMG
-    mkfs.ext2 -m0 $LOOP
-    e2label $LOOP persist
-    losetup -d $LOOP
+    mkfs.ext2 -m0 -L persist $PERSIST_IMG
   fi
 
   kvm \
@@ -123,11 +119,7 @@ function start_user_vm
   PERSIST_IMG=$PERSIST_PATH/$nym_id/user.img
   if [[ -z "$1" || ! -f "$PERSIST_IMG" ]]; then
     dd if=/dev/null of=$PERSIST_IMG bs=256M count=1 seek=1
-    LOOP=$(losetup -f)
-    losetup $LOOP $PERSIST_IMG
-    mkfs.ext2 -m0 $LOOP
-    e2label $LOOP persist
-    losetup -d $LOOP
+    mkfs.ext2 -m0 -L persist $PERSIST_IMG
   fi
 
   QEMU_AUDIO_DRV=alsa kvm \

@@ -122,12 +122,13 @@ if [ $? -ne 0 ]; then
 fi
 
 # if peristent storage was passed through, use it as the ${ROOT_RW}
-mount -v -t ext2 -o loop /dev/vdb ${ROOT_RW}
-if [[ $? -ne 0 ]]; then
+if [[ -e /dev/disk/by-label/persist ]]; then
+    mount /dev/disk/by-label/persist ${ROOT_RW}
+else
     # otherwise mount a tmpfs using the device name tmpfs-root at ${ROOT_RW}
     log_warning_msg "${MYTAG} WARNING: no prst, using tmpfs"
     mount -t tmpfs tmpfs-root ${ROOT_RW}
-    if [ $? -ne 0 ]; then
+    if [[ $? -ne 0 ]]; then
         log_failure_msg "${MYTAG} ERROR: failed to create tmpfs"
         exit 0
     fi
