@@ -1,0 +1,14 @@
+WPATH=/opt/winon
+USER_PATH=$WPATH/vms/user
+NET_PATH=$WPATH/vms/tor
+PERSIST_PATH=$WPATH/var/persist
+COMM_CHECK=$WPATH/check.sh
+SANITIZATION_PATH=$WPATH/vms/sani
+SANITIZATION_INPUT=$WPATH/var/input
+SANITIZATION_OUTPUT=$WPATH/var/output
+NYM_PATH=$WPATH/nym
+PIDS=$WPATH/var/pids
+IPBASE=10.50
+
+# DeterLab hack
+# DETERLAB=TRUE
