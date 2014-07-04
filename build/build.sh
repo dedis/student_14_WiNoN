@@ -117,7 +117,7 @@ function update
   chroot_do $BUILDERPATH update
 }
 
-#base_setup
-#builder_setup
+base_setup
+builder_setup
 update
 image

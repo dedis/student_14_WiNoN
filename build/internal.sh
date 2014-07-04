@@ -11,11 +11,10 @@ function base_setup
   apt-get install -y --force-yes --no-install-recommends \
     alsa-utils \
     chromium-browser \
-    flashplugin-installer \
+    pepperflashplugin-nonfree \
     iptables \
     jwm \
     linux-image-generic \
-    parted \
     python3 \
     qemu-kvm \
     tor \
